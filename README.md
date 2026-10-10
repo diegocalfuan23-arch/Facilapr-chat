@@ -35,36 +35,29 @@ Los dos secretos nunca se pegan en el chat ni se suben al repositorio.
 Volver a Pusher es borrar (o poner `pusher`) en `CHAT_TRANSPORTE` y
 `NEXT_PUBLIC_CHAT_TRANSPORTE`, y redesplegar.
 
-## Ponerlo en AWS (Lightsail)
+## Desplegar en Railway
 
-1. Lightsail → Create instance → Linux, Ubuntu 24.04, plan de ~US$5–7/mes
-   (precio fijo con transferencia incluida; es más predecible que EC2).
-2. Redes: abrir los puertos 80 y 443 (el 22 solo para ti). Crear una IP estática
-   y asignarla a la instancia.
-3. DNS: registro `A` de `chat.facilapr.cl` hacia esa IP. Si el DNS está en
-   Cloudflare, déjalo en "solo DNS" (nube gris) o activa WebSockets.
-4. En la instancia:
-   ```bash
-   curl -fsSL https://get.docker.com | sh
-   git clone https://github.com/diegocalfuan23-arch/Facilapr-chat.git && cd Facilapr-chat
-   cp .env.example .env && nano .env     # completar los secretos
-   docker compose up -d --build
-   ```
-5. HTTPS (obligatorio: facilapr.cl es https y el navegador exige `wss`).
-   Lo más simple es Caddy, que consigue el certificado solo:
-   ```bash
-   sudo apt install -y caddy
-   echo 'chat.facilapr.cl { reverse_proxy localhost:3001 }' | sudo tee /etc/caddy/Caddyfile
-   sudo systemctl reload caddy
-   ```
-6. Comprobar: `https://chat.facilapr.cl/salud` debe responder `ok`.
-7. Cargar las variables en Vercel y redesplegar.
+Railway construye el `Dockerfile` desde GitHub y da HTTPS (`wss`) sin configurar
+nada más. Lee el puerto de la variable `PORT` que él mismo inyecta.
+
+1. New Project → Deploy from GitHub repo → `Facilapr-chat`.
+2. Pestaña **Variables**: cargar `CHAT_JWT_SECRET`, `CHAT_EMIT_SECRET` y
+   `CORS_ORIGINS` (no definir `PORT`). Sin los dos secretos el servicio no
+   arranca, a propósito.
+3. Pestaña **Settings → Networking**: *Generate Domain* (o un dominio propio,
+   `chat.facilapr.cl`, con el CNAME que indique Railway). Mientras el servicio
+   diga "Unexposed service", Vercel no puede llegar a él.
+4. Comprobar: `https://<dominio>/salud` debe responder `ok`.
+5. Cargar las variables de Facilapr en Vercel (tabla de arriba) con esa URL y
+   redesplegar.
+
+También corre en cualquier VPS con `docker compose up -d --build`, poniendo
+delante un proxy con HTTPS (Caddy, por ejemplo).
 
 ## Seguridad
 
 - El token dura 2 minutos y solo trae las salas que esa persona puede escuchar;
   Facilapr lo firma después de revisar la sesión (`/api/chat/token`).
 - `/emitir` exige el secreto compartido y compara en tiempo constante.
-- El puerto 3001 no debe abrirse a internet: solo Caddy (443) lo ve.
 - Para más de un servidor haría falta un adaptador (Redis) para repartir los
   mensajes entre ellos; con uno solo no.
