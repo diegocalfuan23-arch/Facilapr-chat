@@ -13,6 +13,18 @@ function exigirSecreto(nombre: string): string {
   return valor;
 }
 
+/**
+ * Un origen puede traer comodín en el subdominio ("https://*.facilapr.cl"),
+ * porque el portal de cada comité vive en su propio subdominio. Sin
+ * comodín se compara tal cual.
+ */
+function aOrigen(origen: string): string | RegExp {
+  if (!origen.includes('*')) return origen;
+  // Se escapa todo lo que sea especial en una regex, salvo el "*", que pasa a ser un subdominio.
+  const escapado = origen.replace(/[.+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`^${escapado.replace('*', '[a-z0-9-]+')}$`, 'i');
+}
+
 export const config = {
   puerto: Number(process.env.PORT ?? 3001),
   secretoJwt: exigirSecreto('CHAT_JWT_SECRET'),
@@ -20,5 +32,6 @@ export const config = {
   origenes: (process.env.CORS_ORIGINS ?? '')
     .split(',')
     .map((o) => o.trim())
-    .filter(Boolean),
+    .filter(Boolean)
+    .map(aOrigen),
 };

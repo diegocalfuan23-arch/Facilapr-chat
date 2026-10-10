@@ -21,7 +21,7 @@ npm run build && node prueba.mjs   # arranca el servidor, conecta clientes y ver
 |---|---|---|
 | Servicio (`.env`) | `CHAT_JWT_SECRET` | 64 hex al azar (`openssl rand -hex 32`) |
 | Servicio (`.env`) | `CHAT_EMIT_SECRET` | otro distinto |
-| Servicio (`.env`) | `CORS_ORIGINS` | `https://facilapr.cl,https://www.facilapr.cl` |
+| Servicio (`.env`) | `CORS_ORIGINS` | `https://facilapr.cl,https://www.facilapr.cl,https://*.facilapr.cl` |
 | Facilapr (Vercel) | `CHAT_TRANSPORTE` | `socketio` |
 | Facilapr (Vercel) | `NEXT_PUBLIC_CHAT_TRANSPORTE` | `socketio` |
 | Facilapr (Vercel) | `NEXT_PUBLIC_CHAT_URL` | `https://chat.facilapr.cl` |
