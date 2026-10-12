@@ -1,6 +1,9 @@
 import {
+  ConnectedSocket,
+  MessageBody,
   OnGatewayConnection,
   OnGatewayInit,
+  SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
@@ -45,6 +48,24 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection {
 
   handleConnection(socket: Socket) {
     for (const sala of socket.data.salas as string[]) void socket.join(sala);
+  }
+
+  /**
+   * «Está escribiendo…»: el navegador avisa que empezó o dejó de escribir y se
+   * reenvía a los demás de la sala (no a quien lo mandó). Solo se acepta para
+   * salas a las que el token le dio acceso, y no se guarda nada.
+   */
+  @SubscribeMessage('escribiendo')
+  alEscribir(
+    @ConnectedSocket() socket: Socket,
+    @MessageBody() datos: { sala?: unknown; de?: unknown; activo?: unknown },
+  ) {
+    const sala = typeof datos?.sala === 'string' ? datos.sala : '';
+    if (!(socket.data.salas as string[]).includes(sala)) return;
+    socket.to(sala).emit('escribiendo', {
+      de: datos.de === 'SOCIO' ? 'SOCIO' : 'DIRECTIVA',
+      activo: datos.activo === true,
+    });
   }
 
   /** Lo llama el controlador cuando Facilapr publica un mensaje. */
